@@ -67,7 +67,7 @@
 #define NON_CONNECTABLE_ADV_INTERVAL    	MSEC_TO_UNITS(100, UNIT_0_625_MS) 
 
 /* Timer period in milli seconds */
-#define TRIGGER_TIMER_PERIOD_MS				2000		/* 2 s */
+#define TRIGGER_TIMER_PERIOD_MS				5000		/* 5 s */
 /* Timer counter value */
 #define TRIGGER_TIMER_COUNT					((uint32_t)(((uint64_t)TRIGGER_TIMER_PERIOD_MS * 1000000)/30517))
 
