@@ -160,7 +160,7 @@ static const uint8_t preamble_adv[ADV_PACKET_LENGTH] =
 	(uint8_t)(FIXED_DEVICE_ID >> 8),	/* Device ID byte 1 */
 	(uint8_t)(FIXED_DEVICE_ID >> 16),	/* Device ID byte 2 */
 	(uint8_t)(FIXED_DEVICE_ID >> 24),	/* Device ID byte 3 */
-	0x00,								/* Data 0 */
+	1,								/* Data 0 */
 	0x00,								/* Data 1 */
 	0x00,								/* Data 2 */
 	0x00,								/* Data 3 */
@@ -306,13 +306,13 @@ static void timer_handler(void * p_context)
 	err_code = sd_ble_gap_adv_stop();
     APP_ERROR_CHECK(err_code);
 
-	if(adv_data[DATA_BYTE_0_POS] == 2)
+	if(adv_data[DATA_BYTE_0_POS] < 6)
 	{
-		adv_data[DATA_BYTE_0_POS] = 1;
+		adv_data[DATA_BYTE_0_POS]++;
 	}
 	else
 	{
-		adv_data[DATA_BYTE_0_POS] = 2;
+		adv_data[DATA_BYTE_0_POS] = 1;
 	} 
 
 	err_code = sd_ble_gap_adv_data_set((uint8_t const *)adv_data, ADV_PACKET_LENGTH, (uint8_t const *)scan_resp_data, (scan_resp_data[0] + 1));
