@@ -40,6 +40,7 @@
 #include "app_util_platform.h"
 
 #include "broadcaster.h"
+#include "application.h"
 
 
 
@@ -89,9 +90,15 @@ int main(void)
 	/* init broadcaster */
 	broadcaster_init();
 
+	/* init application */
+	application_init();
+
     /* Enter main loop */
     for (;;)
     {
+		/* application main loop function */
+		application_run();
+
         power_manage();
     }
 }

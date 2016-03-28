@@ -346,7 +346,7 @@ void broadcaster_init(void)
 	err_code = app_timer_start(adv_timer, TRIGGER_TIMER_COUNT, NULL);
 	APP_ERROR_CHECK(err_code);
 
-	/* stop debounce timer */
+	/* stop timer */
 //	err_code = app_timer_stop(button_timer);
 //	APP_ERROR_CHECK(err_code);
 }

@@ -69,17 +69,29 @@ remduplicates = $(strip $(if $1,$(firstword $1) $(call remduplicates,$(filter-ou
 #source common to all targets
 C_SOURCE_FILES += \
 $(abspath main.c) \
+$(abspath mpu6050.c) \
 $(abspath broadcaster.c) \
+$(abspath application.c) \
 $(abspath $(SDK_COMPONENTS_PATH)/libraries/util/app_error.c) \
+$(abspath $(SDK_COMPONENTS_PATH)/libraries/util/app_error_weak.c) \
 $(abspath $(SDK_COMPONENTS_PATH)/libraries/timer/app_timer.c) \
 $(abspath $(SDK_COMPONENTS_PATH)/libraries/util/nrf_assert.c) \
+$(abspath $(SDK_COMPONENTS_PATH)/libraries/fifo/app_fifo.c) \
+$(abspath $(SDK_COMPONENTS_PATH)/libraries/twi/app_twi.c) \
+$(abspath $(SDK_COMPONENTS_PATH)/libraries/util/app_util_platform.c) \
 $(abspath $(SDK_COMPONENTS_PATH)/drivers_nrf/delay/nrf_delay.c) \
+$(abspath $(SDK_COMPONENTS_PATH)/libraries/uart/app_uart_fifo.c) \
+$(abspath $(SDK_COMPONENTS_PATH)/drivers_nrf/clock/nrf_drv_clock.c) \
 $(abspath $(SDK_COMPONENTS_PATH)/drivers_nrf/common/nrf_drv_common.c) \
 $(abspath $(SDK_COMPONENTS_PATH)/drivers_nrf/gpiote/nrf_drv_gpiote.c) \
 $(abspath $(SDK_COMPONENTS_PATH)/drivers_nrf/timer/nrf_drv_timer.c) \
+$(abspath $(SDK_COMPONENTS_PATH)/drivers_nrf/rtc/nrf_drv_rtc.c) \
+$(abspath $(SDK_COMPONENTS_PATH)/drivers_nrf/twi_master/nrf_drv_twi.c) \
+$(abspath $(SDK_COMPONENTS_PATH)/drivers_nrf/uart/nrf_drv_uart.c) \
 $(abspath $(SDK_COMPONENTS_PATH)/ble/common/ble_conn_params.c) \
 $(abspath $(SDK_COMPONENTS_PATH)/ble/common/ble_srv_common.c) \
 $(abspath $(SDK_COMPONENTS_PATH)/toolchain/system_nrf51.c) \
+$(abspath $(SDK_COMPONENTS_PATH)/drivers_nrf/nrf_soc_nosd/nrf_soc.c) \
 $(abspath $(SDK_COMPONENTS_PATH)/softdevice/common/softdevice_handler/softdevice_handler.c) \
 
 #assembly files common to all targets
@@ -90,6 +102,7 @@ INC_PATHS  = -I$(abspath config)
 INC_PATHS += -I$(abspath $(SDK_COMPONENTS_PATH)/libraries/util)
 INC_PATHS += -I$(abspath $(SDK_COMPONENTS_PATH)/toolchain/gcc)
 INC_PATHS += -I$(abspath $(SDK_COMPONENTS_PATH)/drivers_nrf/uart)
+INC_PATHS += -I$(abspath $(SDK_COMPONENTS_PATH)/drivers_nrf/rtc)
 INC_PATHS += -I$(abspath $(SDK_COMPONENTS_PATH)/ble/common)
 INC_PATHS += -I$(abspath $(SDK_COMPONENTS_PATH)/softdevice/s130/headers)
 INC_PATHS += -I$(abspath $(SDK_COMPONENTS_PATH)/softdevice/s130/headers/nrf51)
@@ -97,11 +110,16 @@ INC_PATHS += -I$(abspath $(SDK_COMPONENTS_PATH)/drivers_nrf/common)
 INC_PATHS += -I$(abspath $(SDK_COMPONENTS_PATH)/libraries/trace)
 INC_PATHS += -I$(abspath $(SDK_COMPONENTS_PATH)/libraries/fifo)
 INC_PATHS += -I$(abspath $(SDK_COMPONENTS_PATH)/libraries/uart)
+INC_PATHS += -I$(abspath $(SDK_COMPONENTS_PATH)/drivers_nrf/clock)
 INC_PATHS += -I$(abspath $(SDK_COMPONENTS_PATH)/softdevice/s130/headers)
 INC_PATHS += -I$(abspath $(SDK_COMPONENTS_PATH)/drivers_nrf/config)
 INC_PATHS += -I$(abspath $(SDK_COMPONENTS_PATH)/drivers_nrf/timer)
 INC_PATHS += -I$(abspath $(SDK_COMPONENTS_PATH)/drivers_nrf/gpiote)
 INC_PATHS += -I$(abspath $(SDK_COMPONENTS_PATH)/drivers_nrf/delay)
+INC_PATHS += -I$(abspath $(SDK_COMPONENTS_PATH)/libraries/twi)
+INC_PATHS += -I$(abspath $(SDK_COMPONENTS_PATH)/libraries/fifo)
+INC_PATHS += -I$(abspath $(SDK_COMPONENTS_PATH)/libraries/uart)
+INC_PATHS += -I$(abspath $(SDK_COMPONENTS_PATH)/drivers_nrf/twi_master)
 INC_PATHS += -I$(abspath $(SDK_COMPONENTS_PATH)/toolchain)
 INC_PATHS += -I$(abspath $(SDK_COMPONENTS_PATH)/device)
 INC_PATHS += -I$(abspath $(SDK_COMPONENTS_PATH)/softdevice/common/softdevice_handler)
