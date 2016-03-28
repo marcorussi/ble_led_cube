@@ -39,8 +39,20 @@
 #include "app_trace.h"
 #include "app_util_platform.h"
 
+#include "config.h"
+#include "broadcaster.h"
+
+
+
 
 /* ------------------- Local defines ------------------- */
+
+#ifdef FACE_INDEX_TEST
+/* Timer period in milli seconds */
+#define TRIGGER_TIMER_PERIOD_MS				5000		/* 5 s */
+/* Timer counter value */
+#define TRIGGER_TIMER_COUNT					((uint32_t)(((uint64_t)TRIGGER_TIMER_PERIOD_MS * 1000000)/30517))
+#endif
 
 /* Comment this define to use flash defined values */
 //#define USE_UICR_FOR_MAJ_MIN_VALUES
@@ -66,11 +78,6 @@
 /* The advertising interval for non-connectable advertisement (100 ms). This value can vary between 100ms to 10.24s) */       
 #define NON_CONNECTABLE_ADV_INTERVAL    	MSEC_TO_UNITS(100, UNIT_0_625_MS) 
 
-/* Timer period in milli seconds */
-#define TRIGGER_TIMER_PERIOD_MS				5000		/* 5 s */
-/* Timer counter value */
-#define TRIGGER_TIMER_COUNT					((uint32_t)(((uint64_t)TRIGGER_TIMER_PERIOD_MS * 1000000)/30517))
-
 #if defined(USE_UICR_FOR_MAJ_MIN_VALUES)
 /* Address of the UICR register used by this example. The major and minor versions to be encoded into the advertising data will be picked up from this location */
 #define UICR_ADDRESS              			0x10001080                  	
@@ -86,9 +93,20 @@
 #define MANUF_SERVICE_ID					0x0110	
 #define TX_POWER_MEASURED_RSSI				0xc2
 
+/* ATTENTION: temporary fixed device index */
 #define FIXED_DEVICE_ID						0x00010203
 
+/* Max adv length */
 #define MAX_ADV_LENGTH						31
+
+/* Min face index value */
+#define MIN_FACE_INDEX_VALUE				1
+
+/* Max face index value */
+#define MAX_FACE_INDEX_VALUE				6
+
+/* Initial face index value */
+#define INITIAL_FACE_INDEX_VALUE			MIN_FACE_INDEX_VALUE
 
 
 
@@ -133,8 +151,10 @@ typedef enum
 
 /* ------------------ Local macros ----------------------- */
 
+#ifdef FACE_INDEX_TEST
 /* Advertisement timer for test update */
 APP_TIMER_DEF(adv_timer);
+#endif
 
 
 
@@ -160,7 +180,7 @@ static const uint8_t preamble_adv[ADV_PACKET_LENGTH] =
 	(uint8_t)(FIXED_DEVICE_ID >> 8),	/* Device ID byte 1 */
 	(uint8_t)(FIXED_DEVICE_ID >> 16),	/* Device ID byte 2 */
 	(uint8_t)(FIXED_DEVICE_ID >> 24),	/* Device ID byte 3 */
-	1,								/* Data 0 */
+	INITIAL_FACE_INDEX_VALUE,			/* Data 0 */
 	0x00,								/* Data 1 */
 	0x00,								/* Data 2 */
 	0x00,								/* Data 3 */
@@ -198,7 +218,9 @@ uint8_t scan_resp_data[MAX_ADV_LENGTH];
 static void advertising_init	(void);        
 static void advertising_start	(void);  
 static void ble_stack_init		(void);
+#ifdef FACE_INDEX_TEST
 static void timer_handler		(void *);                
+#endif
 
 
 
@@ -296,38 +318,66 @@ static void ble_stack_init(void)
 }
 
 
+#ifdef FACE_INDEX_TEST
 /* Timer timeout function */
 static void timer_handler(void * p_context)
 {
-	uint32_t err_code;
+	uint8_t fake_face_index;
 
 	//nrf_gpio_pin_toggle(24);
 
-	err_code = sd_ble_gap_adv_stop();
-    APP_ERROR_CHECK(err_code);
-
-	if(adv_data[DATA_BYTE_0_POS] < 6)
+	/* increment fake face index */
+	fake_face_index = adv_data[DATA_BYTE_0_POS];
+	if(fake_face_index < 6)
 	{
-		adv_data[DATA_BYTE_0_POS]++;
+		fake_face_index++;
 	}
 	else
 	{
-		adv_data[DATA_BYTE_0_POS] = 1;
+		fake_face_index = 1;
 	} 
 
-	err_code = sd_ble_gap_adv_data_set((uint8_t const *)adv_data, ADV_PACKET_LENGTH, (uint8_t const *)scan_resp_data, (scan_resp_data[0] + 1));
-	APP_ERROR_CHECK(err_code);
+	/* update adv packet */
+	broadcaster_update(fake_face_index);
+}
+#endif
 
-    err_code = sd_ble_gap_adv_start(&m_adv_params);
-    APP_ERROR_CHECK(err_code);
+
+
+
+/* ------------------- Exported functions ------------------- */
+
+/* Function for updating face index in the adv packet */
+void broadcaster_update(uint8_t face_index)
+{
+	uint32_t err_code;
+
+	/* check face index value */
+	if((face_index <= MAX_FACE_INDEX_VALUE)
+	&& (face_index >= MIN_FACE_INDEX_VALUE))
+	{
+		/* stop advertising */
+		err_code = sd_ble_gap_adv_stop();
+    	APP_ERROR_CHECK(err_code);
+		/* update adv data field */
+		adv_data[DATA_BYTE_0_POS] = face_index;
+		/* set new adv data packet */
+		err_code = sd_ble_gap_adv_data_set((uint8_t const *)adv_data, ADV_PACKET_LENGTH, (uint8_t const *)scan_resp_data, (scan_resp_data[0] + 1));
+		APP_ERROR_CHECK(err_code);
+		/* start advertising again */
+		err_code = sd_ble_gap_adv_start(&m_adv_params);
+		APP_ERROR_CHECK(err_code);
+	}
+	else
+	{
+		/* invalid face index: do nothing */
+	}
 }
 
 
 /* Function for application main entry */
 void broadcaster_init(void)
 {
-    uint32_t err_code;
-
 	//nrf_gpio_pin_dir_set(24, NRF_GPIO_PIN_DIR_OUTPUT);
 	//nrf_gpio_pin_write(24, 1);
 
@@ -335,20 +385,26 @@ void broadcaster_init(void)
 
     advertising_init();
 
+	/* Start execution */
+    advertising_start();
+
+#ifdef FACE_INDEX_TEST
+	uint32_t err_code;
+
 	/* init button timer */
 	err_code = app_timer_create(&adv_timer, APP_TIMER_MODE_REPEATED, timer_handler);
     APP_ERROR_CHECK(err_code);
-
-    /* Start execution */
-    advertising_start();
 
 	/* start timer */
 	err_code = app_timer_start(adv_timer, TRIGGER_TIMER_COUNT, NULL);
 	APP_ERROR_CHECK(err_code);
 
 	/* stop timer */
-//	err_code = app_timer_stop(button_timer);
-//	APP_ERROR_CHECK(err_code);
+/*
+	err_code = app_timer_stop(button_timer);
+	APP_ERROR_CHECK(err_code);
+*/
+#endif
 }
 
 

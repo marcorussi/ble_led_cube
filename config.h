@@ -25,17 +25,23 @@
 
 
 /* Uncomment the following define for enabling LED debug regardless UART */
-#define LED_DEBUG
+//#define LED_DEBUG
 
 /* Uncomment the following define for enabling debug over UART */
 //#define UART_DEBUG
+
+/* Uncomment the following define for enabling the test of face index update in the BLE adv packet */
+//#define FACE_INDEX_TEST
 
 /* Uncomment the following define for limiting acceleration detection to 2G
    (any values bigger than 2G will be limited to 2G ) */
 #define LIMIT_XYZ_VALUES_TO_2G
 
 /* Update time in ms for burst read of MPU6050 */
-#define CFG_MPU6050_BURST_READ_UPDATE_MS			200
+#define CFG_MPU6050_BURST_READ_UPDATE_MS			1000
+
+/* Update time in ms for BLE advertisement packet */
+#define CFG_BLE_ADV_UPDATE_MS						2000
 
 
 

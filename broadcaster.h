@@ -26,6 +26,7 @@
 
 /* --------------- Exported functions prototypes ----------------- */
 
+extern void broadcaster_update	(uint8_t);
 extern void broadcaster_init	(void);
 
 

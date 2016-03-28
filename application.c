@@ -44,6 +44,7 @@
 #include "uart.h"
 #endif
 #include "mpu6050.h"
+#include "broadcaster.h"
 #include "application.h"
 
 
@@ -55,8 +56,12 @@
 #define MPU6050_NUM_OF_MOTION_AXIS			3
 
 /* Burst read APP timer defines */
-#define APP_TIMER_TICK_PERIOD_MS			CFG_MPU6050_BURST_READ_UPDATE_MS
-#define APP_TIMER_TICK_COUNT				((uint32_t)(((uint64_t)APP_TIMER_TICK_PERIOD_MS * 1000000)/30517))
+#define BURST_READ_TIMER_TICK_PERIOD_MS		CFG_MPU6050_BURST_READ_UPDATE_MS
+#define BURST_READ_TIMER_TICK_COUNT			((uint32_t)(((uint64_t)BURST_READ_TIMER_TICK_PERIOD_MS * 1000000)/30517))
+
+/* BLE advertisement update APP timer defines */
+#define BLE_UPDATE_TIMER_TICK_PERIOD_MS		CFG_BLE_ADV_UPDATE_MS
+#define BLE_UPDATE_TIMER_TICK_COUNT			((uint32_t)(((uint64_t)BLE_UPDATE_TIMER_TICK_PERIOD_MS * 1000000)/30517))
 
 /* LSB sensitivity */
 #define LSB_SENS_RANGE_2G					16384
@@ -94,6 +99,30 @@
 #define ACC_LSB_THRESHOLD_N4G_LOW			((ACC_LSB_THRESHOLD_N1G*4) - ACC_LSB_THRESHOLD_TOL)
 #endif
 
+/* Codified ZYX values for face index */
+/* ATTENTION: only on axis is considered for each face position */
+/* Codified axis positions */
+#define X_PG_POS							0x01
+#define Y_PG_POS							0x02
+#define Z_PG_POS							0x04
+#define X_NG_POS							0x08
+#define Y_NG_POS							0x10
+#define Z_NG_POS							0x20
+/* Codified xyz for each face */
+#define XYZ_G_FACE_INDEX_1					0b00000001
+#define XYZ_G_FACE_INDEX_2					0b00000010
+#define XYZ_G_FACE_INDEX_3					0b00000100
+#define XYZ_G_FACE_INDEX_4					0b00001000
+#define XYZ_G_FACE_INDEX_5					0b00010000
+#define XYZ_G_FACE_INDEX_6					0b00100000
+/* Faces index */
+#define FACE_INDEX_1						1
+#define FACE_INDEX_2						2
+#define FACE_INDEX_3						3
+#define FACE_INDEX_4						4
+#define FACE_INDEX_5						5
+#define FACE_INDEX_6						6
+
 
 
 
@@ -117,6 +146,9 @@ static motion_temp_st motion_temp_values;
 /* Define timer for MPU6050 burst read trigger */
 APP_TIMER_DEF(read_trigger);
 
+/* Define timer for updating BLE advertisement packet */
+APP_TIMER_DEF(ble_update_trigger);
+
 
 
 
@@ -124,6 +156,7 @@ APP_TIMER_DEF(read_trigger);
 
 static void mpu6050_burst_read_callback	(int16_t *, uint8_t);
 static void read_timeout_handler		(void *);
+static void update_timeout_handler		(void *);
 static void timer_config				(void);
 
 
@@ -232,7 +265,7 @@ void mpu6050_burst_read_callback( int16_t *p_data, uint8_t data_length)
 		}
 	}
 #ifdef LED_DEBUG
-	nrf_gpio_pin_toggle(21);
+	//nrf_gpio_pin_toggle(21);
 #endif
 	/* store temperature */
 	motion_temp_values.temp = p_data[3];
@@ -261,17 +294,122 @@ static void read_timeout_handler(void * p_context)
 }
 
 
+/* Timer timeout handler for triggering a new conversion */
+static void update_timeout_handler(void * p_context)
+{
+	uint8_t motion_codified_g = 0;
+	uint8_t face_index = 0;
+
+	UNUSED_PARAMETER(p_context);
+#ifdef LED_DEBUG
+	nrf_gpio_pin_toggle(21);
+#endif
+
+	/* calculate face index according to last acquired motion values */
+	/* ATTENTION: only one axis should be considered for each face: see defines above */
+	/* X */
+	if(motion_temp_values.acc_xyz[0] == 1)
+	{
+		motion_codified_g |= X_PG_POS;
+	}
+	else if(motion_temp_values.acc_xyz[0] == -1)
+	{
+		motion_codified_g |= X_NG_POS;
+	}
+	else
+	{
+		/* do nothing */
+	}
+	/* Y */
+	if(motion_temp_values.acc_xyz[1] == 1)
+	{
+		motion_codified_g |= Y_PG_POS;
+	}
+	else if(motion_temp_values.acc_xyz[1] == -1)
+	{
+		motion_codified_g |= Y_NG_POS;
+	}
+	else
+	{
+		/* do nothing */
+	}
+	/* Z */
+	if(motion_temp_values.acc_xyz[2] == 1)
+	{
+		motion_codified_g |= Z_PG_POS;
+	}
+	else if(motion_temp_values.acc_xyz[2] == -1)
+	{
+		motion_codified_g |= Z_NG_POS;
+	}
+	else
+	{
+		/* do nothing */
+	}
+
+	/* get final face index to broadcast */
+	switch(motion_codified_g)
+	{
+		case XYZ_G_FACE_INDEX_1:
+			face_index = FACE_INDEX_1;
+			break;
+		case XYZ_G_FACE_INDEX_2:
+			face_index = FACE_INDEX_2;
+			break;
+		case XYZ_G_FACE_INDEX_3:
+			face_index = FACE_INDEX_3;
+			break;
+		case XYZ_G_FACE_INDEX_4:
+			face_index = FACE_INDEX_4;
+			break;
+		case XYZ_G_FACE_INDEX_5:
+			face_index = FACE_INDEX_5;
+			break;
+		case XYZ_G_FACE_INDEX_6:
+			face_index = FACE_INDEX_6;
+			break;
+		default:
+			/* invalid face index */
+			break;
+	}	
+	
+	/* if valid calculated face index */
+	if(face_index != 0)
+	{
+#ifdef UART_DEBUG
+		uint8_t uart_string[20];
+		sprintf((char *)uart_string, "_FACE: %x - %d", motion_codified_g, face_index);
+		uart_send_string((uint8_t *)uart_string, strlen((const char *)uart_string));
+#endif
+		/* update BLE adv packet */
+		broadcaster_update(face_index);
+	}
+	else
+	{
+		/* invalid face index: do nothing */
+	}
+}
+
+
 /* Function to init the read timer */
 static void timer_config(void)
 {
     uint32_t err_code;
 
-	/* init ADC trigger timer */
+	/* init burst read trigger timer */
 	err_code = app_timer_create(&read_trigger, APP_TIMER_MODE_REPEATED, read_timeout_handler);
     APP_ERROR_CHECK(err_code);
 
-	/* start ADC trigger timer */
-	err_code = app_timer_start(read_trigger, APP_TIMER_TICK_COUNT, NULL);
+	/* init BLE adv update trigger timer */
+	err_code = app_timer_create(&ble_update_trigger, APP_TIMER_MODE_REPEATED, update_timeout_handler);
+    APP_ERROR_CHECK(err_code);
+
+	/* start burst read trigger timer */
+	err_code = app_timer_start(read_trigger, BURST_READ_TIMER_TICK_COUNT, NULL);
+    APP_ERROR_CHECK(err_code);
+
+	/* start BLE adv update trigger timer */
+	err_code = app_timer_start(ble_update_trigger, BLE_UPDATE_TIMER_TICK_COUNT, NULL);
     APP_ERROR_CHECK(err_code);
 }
 
@@ -304,9 +442,7 @@ void application_init( void )
 /* Main loop function of the application */
 void application_run( void )
 {
-	
-
-
+	/* do nothing */
 
 #ifdef LED_DEBUG
 	if(motion_temp_values.acc_xyz[0] > 0)
