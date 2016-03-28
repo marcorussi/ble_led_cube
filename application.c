@@ -65,20 +65,34 @@
 #define LSB_SENS_RANGE_16G					2048
 
 /* 1G threshold */
-#define ACC_LSB_THRESHOLD_1G				LSB_SENS_RANGE_4G
+#define ACC_LSB_THRESHOLD_1G				(LSB_SENS_RANGE_4G)
+/* -1G threshold */
+#define ACC_LSB_THRESHOLD_N1G				(-LSB_SENS_RANGE_4G)
 
 /* LSB tolerance */
 #define ACC_LSB_THRESHOLD_TOL				2000
 
 /* G thresholds */
-#define ACC_LSB_THRESHOLD_1G_LOW			(ACC_LSB_THRESHOLD_1G - ACC_LSB_THRESHOLD_TOL)
-#define ACC_LSB_THRESHOLD_1G_HIGH			(ACC_LSB_THRESHOLD_1G + ACC_LSB_THRESHOLD_TOL)
-#define ACC_LSB_THRESHOLD_2G_LOW			((ACC_LSB_THRESHOLD_1G*2) - ACC_LSB_THRESHOLD_TOL)
-#define ACC_LSB_THRESHOLD_2G_HIGH			((ACC_LSB_THRESHOLD_1G*2) + ACC_LSB_THRESHOLD_TOL)
-#define ACC_LSB_THRESHOLD_3G_LOW			((ACC_LSB_THRESHOLD_1G*3) - ACC_LSB_THRESHOLD_TOL)
-#define ACC_LSB_THRESHOLD_3G_HIGH			((ACC_LSB_THRESHOLD_1G*3) + ACC_LSB_THRESHOLD_TOL)
-#define ACC_LSB_THRESHOLD_4G_LOW			((ACC_LSB_THRESHOLD_1G*4) - ACC_LSB_THRESHOLD_TOL)
+#ifndef LIMIT_XYZ_VALUES_TO_2G
 #define ACC_LSB_THRESHOLD_4G_HIGH			((ACC_LSB_THRESHOLD_1G*4) + ACC_LSB_THRESHOLD_TOL)
+#define ACC_LSB_THRESHOLD_4G_LOW			((ACC_LSB_THRESHOLD_1G*4) - ACC_LSB_THRESHOLD_TOL)
+#define ACC_LSB_THRESHOLD_3G_HIGH			((ACC_LSB_THRESHOLD_1G*3) + ACC_LSB_THRESHOLD_TOL)
+#define ACC_LSB_THRESHOLD_3G_LOW			((ACC_LSB_THRESHOLD_1G*3) - ACC_LSB_THRESHOLD_TOL)
+#define ACC_LSB_THRESHOLD_2G_HIGH			((ACC_LSB_THRESHOLD_1G*2) + ACC_LSB_THRESHOLD_TOL)
+#endif
+#define ACC_LSB_THRESHOLD_2G_LOW			((ACC_LSB_THRESHOLD_1G*2) - ACC_LSB_THRESHOLD_TOL)
+#define ACC_LSB_THRESHOLD_1G_HIGH			(ACC_LSB_THRESHOLD_1G + ACC_LSB_THRESHOLD_TOL)
+#define ACC_LSB_THRESHOLD_1G_LOW			(ACC_LSB_THRESHOLD_1G - ACC_LSB_THRESHOLD_TOL)
+#define ACC_LSB_THRESHOLD_N1G_HIGH			(ACC_LSB_THRESHOLD_N1G + ACC_LSB_THRESHOLD_TOL)
+#define ACC_LSB_THRESHOLD_N1G_LOW			(ACC_LSB_THRESHOLD_N1G - ACC_LSB_THRESHOLD_TOL)
+#define ACC_LSB_THRESHOLD_N2G_HIGH			((ACC_LSB_THRESHOLD_N1G*2) + ACC_LSB_THRESHOLD_TOL)
+#ifndef LIMIT_XYZ_VALUES_TO_2G
+#define ACC_LSB_THRESHOLD_N2G_LOW			((ACC_LSB_THRESHOLD_N1G*2) - ACC_LSB_THRESHOLD_TOL)
+#define ACC_LSB_THRESHOLD_N3G_HIGH			((ACC_LSB_THRESHOLD_N1G*3) + ACC_LSB_THRESHOLD_TOL)
+#define ACC_LSB_THRESHOLD_N3G_LOW			((ACC_LSB_THRESHOLD_N1G*3) - ACC_LSB_THRESHOLD_TOL)
+#define ACC_LSB_THRESHOLD_N4G_HIGH			((ACC_LSB_THRESHOLD_N1G*4) + ACC_LSB_THRESHOLD_TOL)
+#define ACC_LSB_THRESHOLD_N4G_LOW			((ACC_LSB_THRESHOLD_N1G*4) - ACC_LSB_THRESHOLD_TOL)
+#endif
 
 
 
@@ -126,7 +140,7 @@ void mpu6050_burst_read_callback( int16_t *p_data, uint8_t data_length)
 	for(i=0; i<MPU6050_NUM_OF_MOTION_AXIS; i++)
 	{
 		/* calculate value in G */
-
+#ifndef LIMIT_XYZ_VALUES_TO_2G
 		/* if higher than ACC_LSB_THRESHOLD_4G_HIGH */
 		if(p_data[i] > ACC_LSB_THRESHOLD_4G_HIGH)
 		{
@@ -150,6 +164,10 @@ void mpu6050_burst_read_callback( int16_t *p_data, uint8_t data_length)
 		else 
 		if((p_data[i] < ACC_LSB_THRESHOLD_2G_HIGH)
 		&& (p_data[i] > ACC_LSB_THRESHOLD_2G_LOW))
+#else
+		/* any value bigger than 2G is limited to 2G */
+		if(p_data[i] > ACC_LSB_THRESHOLD_2G_LOW)
+#endif
 		{
 			motion_temp_values.acc_xyz[i] = 2;
 		}
@@ -160,11 +178,57 @@ void mpu6050_burst_read_callback( int16_t *p_data, uint8_t data_length)
 		{
 			motion_temp_values.acc_xyz[i] = 1;
 		}
-		/* else lower than ACC_LSB_THRESHOLD_1G_LOW */
+		/* around 0G */
+		else 
+		if((p_data[i] < ACC_LSB_THRESHOLD_1G_LOW)
+		&& (p_data[i] > ACC_LSB_THRESHOLD_N1G_HIGH))
+		{
+			motion_temp_values.acc_xyz[i] = 0;
+		}
+		/* around -1G */
+		else 
+		if((p_data[i] < ACC_LSB_THRESHOLD_N1G_HIGH)
+		&& (p_data[i] > ACC_LSB_THRESHOLD_N1G_LOW))
+		{
+			motion_temp_values.acc_xyz[i] = -1;
+		}
+#ifdef LIMIT_XYZ_VALUES_TO_2G
+		else if(p_data[i] < ACC_LSB_THRESHOLD_N2G_HIGH)
+		{
+			motion_temp_values.acc_xyz[i] = -2;
+		}
+#else
+		/* around -2G */
+		else 
+		if((p_data[i] < ACC_LSB_THRESHOLD_N2G_HIGH)
+		&& (p_data[i] > ACC_LSB_THRESHOLD_N2G_LOW))
+		{
+			motion_temp_values.acc_xyz[i] = -2;
+		}
+		/* around -3G */
+		else 
+		if((p_data[i] < ACC_LSB_THRESHOLD_N3G_HIGH)
+		&& (p_data[i] > ACC_LSB_THRESHOLD_N3G_LOW))
+		{
+			motion_temp_values.acc_xyz[i] = -3;
+		}
+		/* around -4G */
+		else 
+		if((p_data[i] < ACC_LSB_THRESHOLD_N4G_HIGH)
+		&& (p_data[i] > ACC_LSB_THRESHOLD_N4G_LOW))
+		{
+			motion_temp_values.acc_xyz[i] = -4;
+		}
+		/* else if higher than ACC_LSB_THRESHOLD_N4G_LOW */
+		else if(p_data[i] < ACC_LSB_THRESHOLD_N4G_LOW)
+		{
+			/* saturate at -4G */
+			motion_temp_values.acc_xyz[i] = -4;
+		}
+#endif
 		else
 		{
-			/* consider 0 G */
-			motion_temp_values.acc_xyz[i] = 0;
+			/* keep current value */
 		}
 	}
 #ifdef LED_DEBUG
@@ -240,12 +304,16 @@ void application_init( void )
 /* Main loop function of the application */
 void application_run( void )
 {
+	
+
+
+
 #ifdef LED_DEBUG
 	if(motion_temp_values.acc_xyz[0] > 0)
 	{
 		nrf_gpio_pin_write(22, 0);
 	}
-	else
+	else if(motion_temp_values.acc_xyz[0] < 0)
 	{
 		nrf_gpio_pin_write(22, 1);
 	}
@@ -254,7 +322,7 @@ void application_run( void )
 	{
 		nrf_gpio_pin_write(23, 0);
 	}
-	else
+	else if(motion_temp_values.acc_xyz[1] < 0)
 	{
 		nrf_gpio_pin_write(23, 1);
 	}
@@ -263,7 +331,7 @@ void application_run( void )
 	{
 		nrf_gpio_pin_write(24, 0);
 	}
-	else
+	else if(motion_temp_values.acc_xyz[2] < 0)
 	{
 		nrf_gpio_pin_write(24, 1);
 	}

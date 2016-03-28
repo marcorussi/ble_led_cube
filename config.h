@@ -30,6 +30,10 @@
 /* Uncomment the following define for enabling debug over UART */
 //#define UART_DEBUG
 
+/* Uncomment the following define for limiting acceleration detection to 2G
+   (any values bigger than 2G will be limited to 2G ) */
+#define LIMIT_XYZ_VALUES_TO_2G
+
 /* Update time in ms for burst read of MPU6050 */
 #define CFG_MPU6050_BURST_READ_UPDATE_MS			200
 
