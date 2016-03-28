@@ -32,9 +32,24 @@
 
 
 
+/* --------------- Exported typedefs ----------------- */
+
+/* Burst read event handler type */
+typedef void (* burst_read_handler_st) (int16_t *, uint8_t);
+
+/* Structure to store init data */
+typedef struct
+{
+    burst_read_handler_st burst_read_handler;	
+} mpu6050_init_st;
+
+
+
+
 /* --------------- Exported functions prototypes ----------------- */
 
-extern bool mpu6050_init	(void);
+extern bool mpu6050_start_burst_read	(void);
+extern bool mpu6050_init				(mpu6050_init_st *);
 
 
 

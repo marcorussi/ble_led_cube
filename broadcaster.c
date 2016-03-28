@@ -301,7 +301,7 @@ static void timer_handler(void * p_context)
 {
 	uint32_t err_code;
 
-	nrf_gpio_pin_toggle(24);
+	//nrf_gpio_pin_toggle(24);
 
 	err_code = sd_ble_gap_adv_stop();
     APP_ERROR_CHECK(err_code);
@@ -328,8 +328,8 @@ void broadcaster_init(void)
 {
     uint32_t err_code;
 
-	nrf_gpio_pin_dir_set(24, NRF_GPIO_PIN_DIR_OUTPUT);
-	nrf_gpio_pin_write(24, 1);
+	//nrf_gpio_pin_dir_set(24, NRF_GPIO_PIN_DIR_OUTPUT);
+	//nrf_gpio_pin_write(24, 1);
 
     ble_stack_init();
 

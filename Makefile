@@ -69,6 +69,7 @@ remduplicates = $(strip $(if $1,$(firstword $1) $(call remduplicates,$(filter-ou
 #source common to all targets
 C_SOURCE_FILES += \
 $(abspath main.c) \
+$(abspath uart.c) \
 $(abspath mpu6050.c) \
 $(abspath broadcaster.c) \
 $(abspath application.c) \

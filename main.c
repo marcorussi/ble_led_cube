@@ -39,6 +39,10 @@
 #include "app_trace.h"
 #include "app_util_platform.h"
 
+#include "config.h"
+#ifdef UART_DEBUG
+#include "uart.h"
+#endif
 #include "broadcaster.h"
 #include "application.h"
 
@@ -87,6 +91,23 @@ int main(void)
     /* Initialize */
     APP_TIMER_INIT(APP_TIMER_PRESCALER, APP_TIMER_OP_QUEUE_SIZE, false);
 
+#ifdef LED_DEBUG
+	/* init debug pins */
+	nrf_gpio_pin_dir_set(21, NRF_GPIO_PIN_DIR_OUTPUT);
+	nrf_gpio_pin_dir_set(22, NRF_GPIO_PIN_DIR_OUTPUT);
+	nrf_gpio_pin_dir_set(23, NRF_GPIO_PIN_DIR_OUTPUT);
+	nrf_gpio_pin_dir_set(24, NRF_GPIO_PIN_DIR_OUTPUT);
+	nrf_gpio_pin_write(21, 1);
+	nrf_gpio_pin_write(22, 1);
+	nrf_gpio_pin_write(23, 1);
+	nrf_gpio_pin_write(24, 1);
+#endif
+
+#ifdef UART_DEBUG
+	/* init UART */
+    uart_init();
+#endif
+
 	/* init broadcaster */
 	broadcaster_init();
 
@@ -98,6 +119,8 @@ int main(void)
     {
 		/* application main loop function */
 		application_run();
+
+		//nrf_delay_ms(200);
 
         power_manage();
     }
