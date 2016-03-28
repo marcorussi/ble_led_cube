@@ -56,6 +56,10 @@
 
 /* ---------------- Local defines ------------------- */
 
+/* TWI pin numbers */
+#define TWI_SCL_PIN_NUMBER					12
+#define TWI_SDA_PIN_NUMBER					13
+
 /* Max number of pending TWI transactions */
 #define MAX_PENDING_TRANSACTIONS    		5
 
@@ -252,8 +256,8 @@ static void twi_config(void)
     uint32_t err_code;
 
     nrf_drv_twi_config_t const config = {
-       .scl                = 10,
-       .sda                = 11,
+       .scl                = TWI_SCL_PIN_NUMBER,
+       .sda                = TWI_SDA_PIN_NUMBER,
        .frequency          = NRF_TWI_FREQ_100K,
        .interrupt_priority = APP_IRQ_PRIORITY_LOW
     };
@@ -322,18 +326,19 @@ bool mpu6050_init( mpu6050_init_st *p_init )
 	/* if the obtained value is equal to the expected one */
 	if(m_buffer[0] == WHO_AM_I_REG_VALUE)
 	{
-#ifdef UART_DEBUG
-		sprintf((char *)uart_string, "OK - %x", m_buffer[0]);
-		uart_send_string((uint8_t *)uart_string, strlen((const char *)uart_string));
-
-		//nrf_gpio_pin_write(22, 0);
-#endif
-
 		/* store burst reada handler function */
 		app_burst_read_handler = p_init->burst_read_handler;
 
 		/* perform initial tranfers for configuring the MPU6050 */
 		APP_ERROR_CHECK(app_twi_perform(&m_app_twi, mpu6050_init_transfers, MPU6050_INIT_TRANSFER_COUNT, NULL));
+
+#ifdef UART_DEBUG
+		sprintf((char *)uart_string, "OK - %x", m_buffer[0]);
+		uart_send_string((uint8_t *)uart_string, strlen((const char *)uart_string));
+#endif
+#ifdef LED_DEBUG
+		nrf_gpio_pin_write(21, 0);
+#endif
 	}
 	else
 	{

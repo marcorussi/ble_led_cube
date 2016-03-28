@@ -25,7 +25,7 @@
 
 
 /* Uncomment the following define for enabling LED debug regardless UART */
-//#define LED_DEBUG
+#define LED_DEBUG
 
 /* Uncomment the following define for enabling debug over UART */
 //#define UART_DEBUG
