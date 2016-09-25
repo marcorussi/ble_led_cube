@@ -357,7 +357,7 @@ static void read_timeout_handler(void * p_context)
 static void update_timeout_handler(void * p_context)
 {
 	uint8_t motion_codified_g = 0;
-	uint8_t face_index = 0;
+	uint8_t face_index = 0xFF;
 
 	UNUSED_PARAMETER(p_context);
 #ifdef LED_DEBUG
