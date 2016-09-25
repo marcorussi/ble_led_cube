@@ -224,11 +224,13 @@ static ble_cube_cfg_st m_cube_cfg;
 static uint16_t m_conn_handle = BLE_CONN_HANDLE_INVALID;     
 
 /* BLE UUID fields */
-/* ATTENTION: custom CUBE_CFG UUID only */
+/* ATTENTION: custom CUBE_CFG UUID only NOT USED AT THE MOMENT */
+/*
 static ble_uuid_t adv_uuids[] =
 {
     {BLE_UUID_CUBE_CFG_SERVICE, CUBE_CFG_SERVICE_UUID_TYPE},
 };
+*/
 
 #if 0
 /* Manufacturer data array */

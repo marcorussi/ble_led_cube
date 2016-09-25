@@ -174,36 +174,36 @@ APP_TIMER_DEF(ble_update_trigger);
 /* Default characteristic values */
 const uint8_t default_values[BLE_CUBE_CFG_SERVICE_CHARS_LENGTH] = 
 {
-	20,		/* Preset 1 - R */						
+	100,	/* Preset 1 - R */						
 	0,		/* Preset 1 - G */
 	0,		/* Preset 1 - B */
 	0,		/* Preset 1 - W */
-	100,	/* Preset 1 - Fade */
+	0xFF,	/* Preset 1 - Unused */
 	0,		/* Preset 2 - R */						
-	60,		/* Preset 2 - G */		
+	100,	/* Preset 2 - G */		
 	0,		/* Preset 2 - B */
 	0,		/* Preset 2 - W */
-	30,		/* Preset 2 - Fade */
+	0xFF,	/* Preset 2 - Unused */
 	0,		/* Preset 3 - R */						
 	0,		/* Preset 3 - G */
-	95,		/* Preset 3 - B */
+	100,	/* Preset 3 - B */
 	0,		/* Preset 3 - W */
-	10,		/* Preset 3 - Fade */
-	50,		/* Preset 4 - R */						
-	50,		/* Preset 4 - G */
+	0xFF,	/* Preset 3 - Unused */
+	68,		/* Preset 4 - R */						
+	100,	/* Preset 4 - G */
 	0,		/* Preset 4 - B */
 	0,		/* Preset 4 - W */
-	30,		/* Preset 4 - Fade */
+	0xFF,	/* Preset 4 - Unused */
 	0,		/* Preset 5 - R */						
-	0,		/* Preset 5 - G */
-	0,		/* Preset 5 - B */
-	100,	/* Preset 5 - W */
-	90,		/* Preset 5 - Fade */
-	0,		/* Preset 6 - R */							
-	0,		/* Preset 6 - G */
-	0,		/* Preset 6 - B */
+	90,		/* Preset 5 - G */
+	100,	/* Preset 5 - B */
+	0,		/* Preset 5 - W */
+	0xFF,	/* Preset 5 - Unused */
+	49,		/* Preset 6 - R */							
+	100,	/* Preset 6 - G */
+	55,		/* Preset 6 - B */
 	0,		/* Preset 6 - W */
-	70,		/* Preset 6 - Fade */
+	0xFF,	/* Preset 6 - Unused */
 	0x00	/* SPECIAL_OP */
 };
 
@@ -357,7 +357,7 @@ static void read_timeout_handler(void * p_context)
 static void update_timeout_handler(void * p_context)
 {
 	uint8_t motion_codified_g = 0;
-	uint8_t face_index = 0xFF;
+	uint8_t face_index = 0xFF;	/* Init to an invalid greater than 6 value */
 
 	UNUSED_PARAMETER(p_context);
 #ifdef LED_DEBUG

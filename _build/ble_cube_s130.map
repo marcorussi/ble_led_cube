@@ -1231,7 +1231,7 @@ END GROUP
                 0x20002ad0       0x18 _build/mpu6050.o
  .bss.app_burst_read_handler
                 0x20002ae8        0x4 _build/mpu6050.o
- .bss.BLE_EVT_BUFFER.8676
+ .bss.BLE_EVT_BUFFER.8675
                 0x20002aec       0x48 _build/ble_manager.o
  .bss.m_cube_cfg
                 0x20002b34       0x24 _build/ble_manager.o
