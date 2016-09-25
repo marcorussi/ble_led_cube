@@ -70,8 +70,10 @@ remduplicates = $(strip $(if $1,$(firstword $1) $(call remduplicates,$(filter-ou
 C_SOURCE_FILES += \
 $(abspath main.c) \
 $(abspath uart.c) \
+$(abspath memory.c) \
 $(abspath mpu6050.c) \
-$(abspath broadcaster.c) \
+$(abspath ble_manager.c) \
+$(abspath cfg_service.c) \
 $(abspath application.c) \
 $(abspath $(SDK_COMPONENTS_PATH)/libraries/util/app_error.c) \
 $(abspath $(SDK_COMPONENTS_PATH)/libraries/util/app_error_weak.c) \
@@ -80,6 +82,7 @@ $(abspath $(SDK_COMPONENTS_PATH)/libraries/util/nrf_assert.c) \
 $(abspath $(SDK_COMPONENTS_PATH)/libraries/fifo/app_fifo.c) \
 $(abspath $(SDK_COMPONENTS_PATH)/libraries/twi/app_twi.c) \
 $(abspath $(SDK_COMPONENTS_PATH)/libraries/util/app_util_platform.c) \
+$(abspath $(SDK_COMPONENTS_PATH)/libraries/fstorage/fstorage.c) \
 $(abspath $(SDK_COMPONENTS_PATH)/drivers_nrf/delay/nrf_delay.c) \
 $(abspath $(SDK_COMPONENTS_PATH)/libraries/uart/app_uart_fifo.c) \
 $(abspath $(SDK_COMPONENTS_PATH)/drivers_nrf/clock/nrf_drv_clock.c) \
@@ -88,7 +91,11 @@ $(abspath $(SDK_COMPONENTS_PATH)/drivers_nrf/gpiote/nrf_drv_gpiote.c) \
 $(abspath $(SDK_COMPONENTS_PATH)/drivers_nrf/timer/nrf_drv_timer.c) \
 $(abspath $(SDK_COMPONENTS_PATH)/drivers_nrf/rtc/nrf_drv_rtc.c) \
 $(abspath $(SDK_COMPONENTS_PATH)/drivers_nrf/twi_master/nrf_drv_twi.c) \
+$(abspath $(SDK_COMPONENTS_PATH)/drivers_nrf/pstorage/pstorage.c) \
 $(abspath $(SDK_COMPONENTS_PATH)/drivers_nrf/uart/nrf_drv_uart.c) \
+$(abspath $(SDK_COMPONENTS_PATH)/ble/common/ble_advdata.c) \
+$(abspath $(SDK_COMPONENTS_PATH)/ble/ble_services/ble_bas/ble_bas.c) \
+$(abspath $(SDK_COMPONENTS_PATH)/ble/ble_services/ble_dis/ble_dis.c) \
 $(abspath $(SDK_COMPONENTS_PATH)/ble/common/ble_conn_params.c) \
 $(abspath $(SDK_COMPONENTS_PATH)/ble/common/ble_srv_common.c) \
 $(abspath $(SDK_COMPONENTS_PATH)/toolchain/system_nrf51.c) \
@@ -105,6 +112,8 @@ INC_PATHS += -I$(abspath $(SDK_COMPONENTS_PATH)/toolchain/gcc)
 INC_PATHS += -I$(abspath $(SDK_COMPONENTS_PATH)/drivers_nrf/uart)
 INC_PATHS += -I$(abspath $(SDK_COMPONENTS_PATH)/drivers_nrf/rtc)
 INC_PATHS += -I$(abspath $(SDK_COMPONENTS_PATH)/ble/common)
+INC_PATHS += -I$(abspath $(SDK_COMPONENTS_PATH)/ble/ble_services/ble_bas)
+INC_PATHS += -I$(abspath $(SDK_COMPONENTS_PATH)/ble/ble_services/ble_dis)
 INC_PATHS += -I$(abspath $(SDK_COMPONENTS_PATH)/softdevice/s130/headers)
 INC_PATHS += -I$(abspath $(SDK_COMPONENTS_PATH)/softdevice/s130/headers/nrf51)
 INC_PATHS += -I$(abspath $(SDK_COMPONENTS_PATH)/drivers_nrf/common)
@@ -120,6 +129,9 @@ INC_PATHS += -I$(abspath $(SDK_COMPONENTS_PATH)/drivers_nrf/delay)
 INC_PATHS += -I$(abspath $(SDK_COMPONENTS_PATH)/libraries/twi)
 INC_PATHS += -I$(abspath $(SDK_COMPONENTS_PATH)/libraries/fifo)
 INC_PATHS += -I$(abspath $(SDK_COMPONENTS_PATH)/libraries/uart)
+INC_PATHS += -I$(abspath $(SDK_COMPONENTS_PATH)/drivers_nrf/pstorage)
+INC_PATHS += -I$(abspath $(SDK_COMPONENTS_PATH)/libraries/fstorage/config)
+INC_PATHS += -I$(abspath $(SDK_COMPONENTS_PATH)/libraries/fstorage)
 INC_PATHS += -I$(abspath $(SDK_COMPONENTS_PATH)/drivers_nrf/twi_master)
 INC_PATHS += -I$(abspath $(SDK_COMPONENTS_PATH)/toolchain)
 INC_PATHS += -I$(abspath $(SDK_COMPONENTS_PATH)/device)
@@ -128,6 +140,7 @@ INC_PATHS += -I$(abspath $(SDK_COMPONENTS_PATH)/libraries/timer)
 INC_PATHS += -I$(abspath $(SDK_COMPONENTS_PATH)/libraries/experimental_section_vars)
 INC_PATHS += -I$(abspath $(SDK_COMPONENTS_PATH)/drivers_nrf/hal)
 INC_PATHS += -I$(abspath $(SDK_COMPONENTS_PATH)/toolchain/CMSIS/Include)
+INC_PATHS += -I$(abspath $(SDK_COMPONENTS_PATH)/libraries/bootloader_dfu)
 
 OBJECT_DIRECTORY = _build
 LISTING_DIRECTORY = $(OBJECT_DIRECTORY)
@@ -136,7 +149,7 @@ OUTPUT_BINARY_DIRECTORY = $(OBJECT_DIRECTORY)
 # Sorting removes duplicates
 BUILD_DIRECTORIES := $(sort $(OBJECT_DIRECTORY) $(OUTPUT_BINARY_DIRECTORY) $(LISTING_DIRECTORY) )
 
-#flags common to all targets
+#flags common to all targets   -Werror
 CFLAGS  = -DBOARD_PCA10028
 CFLAGS += -DSWI_DISABLE0
 CFLAGS += -DSOFTDEVICE_PRESENT
@@ -145,7 +158,7 @@ CFLAGS += -DS130
 CFLAGS += -DBLE_STACK_SUPPORT_REQD
 CFLAGS += -mcpu=cortex-m0
 CFLAGS += -mthumb -mabi=aapcs --std=gnu99
-CFLAGS += -Wall -Werror -O3
+CFLAGS += -Wall -O3
 CFLAGS += -mfloat-abi=soft
 # keep every function in separate section. This will allow linker to dump unused functions
 CFLAGS += -ffunction-sections -fdata-sections -fno-strict-aliasing

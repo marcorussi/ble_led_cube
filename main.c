@@ -43,7 +43,7 @@
 #ifdef UART_DEBUG
 #include "uart.h"
 #endif
-#include "broadcaster.h"
+#include "ble_manager.h"
 #include "application.h"
 
 
@@ -97,10 +97,10 @@ int main(void)
 	nrf_gpio_pin_dir_set(22, NRF_GPIO_PIN_DIR_OUTPUT);
 	nrf_gpio_pin_dir_set(23, NRF_GPIO_PIN_DIR_OUTPUT);
 	nrf_gpio_pin_dir_set(24, NRF_GPIO_PIN_DIR_OUTPUT);
-	nrf_gpio_pin_write(21, 1);
-	nrf_gpio_pin_write(22, 1);
-	nrf_gpio_pin_write(23, 1);
-	nrf_gpio_pin_write(24, 1);
+	nrf_gpio_pin_write(21, 0);
+	nrf_gpio_pin_write(22, 0);
+	nrf_gpio_pin_write(23, 0);
+	nrf_gpio_pin_write(24, 0);
 #endif
 
 #ifdef UART_DEBUG
@@ -108,17 +108,14 @@ int main(void)
     uart_init();
 #endif
 
-	/* init broadcaster */
-	broadcaster_init();
-
 	/* init application */
-	application_init();
+	app_init();
 
     /* Enter main loop */
     for (;;)
     {
 		/* application main loop function */
-		application_run();
+		app_run();
 
 		//nrf_delay_ms(200);
 

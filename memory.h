@@ -22,12 +22,24 @@
 */
 
 
+/* ------------- Inclusions --------------- */
+
+#include <stdint.h>
+#include <stdbool.h>
 
 
-/* --------------- Exported functions prototypes ----------------- */
 
-extern void broadcaster_update	(uint8_t);
-extern void broadcaster_init	(void);
+
+/* ------------- Exported defines --------------- */
+
+
+
+
+/* ------------- Exported functions --------------- */
+
+extern bool memory_is_busy		(void);
+extern bool memory_update_field	(uint8_t, uint8_t *, uint8_t);
+extern bool memory_init			(const uint8_t *);
 
 
 

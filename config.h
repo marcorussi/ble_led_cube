@@ -30,6 +30,9 @@
 /* Uncomment the following define for enabling debug over UART */
 //#define UART_DEBUG
 
+/* Uncomment the following define for enabling the accelerometer and its management */
+#define ENABLE_ACCELEROMETER
+
 /* Uncomment the following define for enabling the test of face index update in the BLE adv packet */
 //#define FACE_INDEX_TEST
 
@@ -38,10 +41,31 @@
 #define LIMIT_XYZ_VALUES_TO_2G
 
 /* Update time in ms for burst read of MPU6050 */
-#define CFG_MPU6050_BURST_READ_UPDATE_MS			1000
+#define CFG_MPU6050_BURST_READ_UPDATE_MS			500
 
 /* Update time in ms for BLE advertisement packet */
-#define CFG_BLE_ADV_UPDATE_MS						2000
+#define CFG_BLE_ADV_UPDATE_MS						1000
+
+/* ATTENTION: temporary company ID */
+#define TEMP_COMPANY_ID								0x0FFE
+
+/* Manufacturer service ID */
+#define MANUF_SERVICE_ID							0x0110	
+
+/* TX power RSSI */
+#define TX_POWER_MEASURED_RSSI						0xc2
+
+/* HW revision */
+#define HW_REVISION									"Proto"
+
+/* FW revision */
+#define FW_REVISION									"A0.5"
+
+/* Manufacturer name */
+#define MANUFACTURER_NAME							"Pingeco ltd"
+
+/* Name of device. Will be included in the advertising data */
+#define DEVICE_NAME                      			"CUBE_PROTO"  
 
 
 

@@ -26,13 +26,16 @@
 
 /* --------------- Exported functions prototypes ----------------- */
 
-extern void app_special_op	(uint8_t);
-extern void app_init		(void);
-extern void app_run			(void);
+extern void ble_mng_update_batt_level	(uint8_t);
+extern void ble_man_adv_update			(uint8_t *, uint8_t);
+extern void ble_man_adv_start			(void);
+extern void ble_man_init				(void);
 
 
 
 
 /* End of file */
+
+
 
 

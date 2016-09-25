@@ -38,20 +38,29 @@
 #include "app_timer.h"
 #include "app_trace.h"
 #include "app_util_platform.h"
+#include "bootloader.h"
 
 #include "config.h"
 #ifdef UART_DEBUG
 #include "uart.h"
 #endif
+#include "memory.h"
+#ifdef ENABLE_ACCELEROMETER
 #include "mpu6050.h"
-#include "broadcaster.h"
+#endif
+#include "ble_manager.h"
 #include "application.h"
+#include "cfg_service.h"
 
 
 
 
 /* ------------------- Local defines ------------------- */
 
+/* Password for starting DFU Upgrade on char write */
+#define DFU_UPGRADE_CHAR_PASSWORD			0xA9				
+
+#ifdef ENABLE_ACCELEROMETER
 /* Number of motion axis */
 #define MPU6050_NUM_OF_MOTION_AXIS			3
 
@@ -116,18 +125,20 @@
 #define XYZ_G_FACE_INDEX_5					0b00010000
 #define XYZ_G_FACE_INDEX_6					0b00100000
 /* Faces index */
-#define FACE_INDEX_1						1
-#define FACE_INDEX_2						2
-#define FACE_INDEX_3						3
-#define FACE_INDEX_4						4
-#define FACE_INDEX_5						5
-#define FACE_INDEX_6						6
+#define FACE_INDEX_1						0
+#define FACE_INDEX_2						1
+#define FACE_INDEX_3						2
+#define FACE_INDEX_4						3
+#define FACE_INDEX_5						4
+#define FACE_INDEX_6						5
+#endif
 
 
 
 
 /* ------------------- Local typedefs ------------------- */
 
+#ifdef ENABLE_ACCELEROMETER
 /* Structure containing x,y,z and temperature values */
 typedef struct
 {
@@ -137,33 +148,83 @@ typedef struct
 
 /* Structure to store motion and temperature values */
 static motion_temp_st motion_temp_values;
+#endif
 
 
 
 
 /* ------------------- Local macros ------------------- */
 
+/* Macro to set spacial value on GPREGRET register to start bootloader after reset */
+#define SET_REG_VALUE_TO_START_BOOTLOADER() 			(NRF_POWER->GPREGRET = BOOTLOADER_DFU_START)
+
+#ifdef ENABLE_ACCELEROMETER
 /* Define timer for MPU6050 burst read trigger */
 APP_TIMER_DEF(read_trigger);
 
 /* Define timer for updating BLE advertisement packet */
 APP_TIMER_DEF(ble_update_trigger);
+#endif
+
+
+
+
+/* ------------------- Local const variables ------------------- */
+
+/* Default characteristic values */
+const uint8_t default_values[BLE_CUBE_CFG_SERVICE_CHARS_LENGTH] = 
+{
+	20,		/* Preset 1 - R */						
+	0,		/* Preset 1 - G */
+	0,		/* Preset 1 - B */
+	0,		/* Preset 1 - W */
+	100,	/* Preset 1 - Fade */
+	0,		/* Preset 2 - R */						
+	60,		/* Preset 2 - G */		
+	0,		/* Preset 2 - B */
+	0,		/* Preset 2 - W */
+	30,		/* Preset 2 - Fade */
+	0,		/* Preset 3 - R */						
+	0,		/* Preset 3 - G */
+	95,		/* Preset 3 - B */
+	0,		/* Preset 3 - W */
+	10,		/* Preset 3 - Fade */
+	50,		/* Preset 4 - R */						
+	50,		/* Preset 4 - G */
+	0,		/* Preset 4 - B */
+	0,		/* Preset 4 - W */
+	30,		/* Preset 4 - Fade */
+	0,		/* Preset 5 - R */						
+	0,		/* Preset 5 - G */
+	0,		/* Preset 5 - B */
+	100,	/* Preset 5 - W */
+	90,		/* Preset 5 - Fade */
+	0,		/* Preset 6 - R */							
+	0,		/* Preset 6 - G */
+	0,		/* Preset 6 - B */
+	0,		/* Preset 6 - W */
+	70,		/* Preset 6 - Fade */
+	0x00	/* SPECIAL_OP */
+};
 
 
 
 
 /* ------------------- Local functions prototypes ------------------- */
 
+#ifdef ENABLE_ACCELEROMETER
 static void mpu6050_burst_read_callback	(int16_t *, uint8_t);
 static void read_timeout_handler		(void *);
 static void update_timeout_handler		(void *);
 static void timer_config				(void);
+#endif
 
 
 
 
-/* ------------------- Local functions prototypes ------------------- */
+/* ------------------- Local functions ------------------- */
 
+#ifdef ENABLE_ACCELEROMETER
 /* Burst read callback function */
 void mpu6050_burst_read_callback( int16_t *p_data, uint8_t data_length)
 {
@@ -270,8 +331,6 @@ void mpu6050_burst_read_callback( int16_t *p_data, uint8_t data_length)
 	/* store temperature */
 	motion_temp_values.temp = p_data[3];
 
-	//application_run();
-
 #ifdef UART_DEBUG
 	uint8_t uart_string[20];
 	sprintf((char *)uart_string, "_X: %d - %d", p_data[0], motion_temp_values.acc_xyz[0]);
@@ -302,7 +361,7 @@ static void update_timeout_handler(void * p_context)
 
 	UNUSED_PARAMETER(p_context);
 #ifdef LED_DEBUG
-	nrf_gpio_pin_toggle(21);
+	//nrf_gpio_pin_toggle(21);
 #endif
 
 	/* calculate face index according to last acquired motion values */
@@ -374,15 +433,16 @@ static void update_timeout_handler(void * p_context)
 	}	
 	
 	/* if valid calculated face index */
-	if(face_index != 0)
+	if(face_index <= FACE_INDEX_6)
 	{
 #ifdef UART_DEBUG
 		uint8_t uart_string[20];
 		sprintf((char *)uart_string, "_FACE: %x - %d", motion_codified_g, face_index);
 		uart_send_string((uint8_t *)uart_string, strlen((const char *)uart_string));
 #endif
-		/* update BLE adv packet */
-		broadcaster_update(face_index);
+		uint8_t pwm_values_index = (uint8_t)(BLE_CUBE_CFG_PRESET1_CHAR_POS + (BLE_PRESET_NUM_OF_BYTES * face_index));
+		/* update BLE adv packet with RGBW values */
+		ble_man_adv_update((uint8_t *)&char_values[pwm_values_index], BLE_PRESET_NUM_OF_BYTES);
 	}
 	else
 	{
@@ -412,17 +472,54 @@ static void timer_config(void)
 	err_code = app_timer_start(ble_update_trigger, BLE_UPDATE_TIMER_TICK_COUNT, NULL);
     APP_ERROR_CHECK(err_code);
 }
+#endif
 
 
 
 
 /* --------------- Exported functions ----------------- */
 
-/* Function to init the application */
-void application_init( void )
+/* Manage SPECIAL_OP characteristic received value */
+void app_special_op( uint8_t special_op_byte )
 {
-	mpu6050_init_st init_data;
+	/* if received data is the password for DFU Upgrade */
+	if(special_op_byte == DFU_UPGRADE_CHAR_PASSWORD)
+	{
+		/* set special register value to start bootloader */
+		SET_REG_VALUE_TO_START_BOOTLOADER();
 
+		/* perform a system reset */
+		NVIC_SystemReset();
+	}
+	else
+	{
+		/* do nothing */
+	}
+}
+
+
+/* Function to init the application */
+void app_init( void )
+{
+#ifdef ENABLE_ACCELEROMETER
+	mpu6050_init_st init_data;
+#endif
+	/* init BLE manager */
+	ble_man_init();
+
+	/* if persistent memory is initialised successfully */
+	if(true == memory_init(default_values))
+	{
+		/* wait for completion */
+		while(false != memory_is_busy());
+	}
+	else
+	{
+		/* very bad, use default setting as recovery */
+		/* TODO: consider to move the following operation in the memory module */
+		memcpy((void *)char_values, (const void *)&default_values, BLE_CUBE_CFG_SERVICE_CHARS_LENGTH);
+	}
+#ifdef ENABLE_ACCELEROMETER
 	/* set burst read callback function */
 	init_data.burst_read_handler = (burst_read_handler_st)mpu6050_burst_read_callback;
 
@@ -436,14 +533,21 @@ void application_init( void )
 	{
 		/* mpu6050 init failed. Do nothing */
 	}
+#endif
+	/* start advertising */
+	ble_man_adv_start();
+
+	/* update the battery service value */
+	/* ATTENTION: update a temporary fixed battery value */
+	ble_mng_update_batt_level(20);
 }
 
 
 /* Main loop function of the application */
-void application_run( void )
+void app_run( void )
 {
 	/* do nothing */
-
+#ifdef ENABLE_ACCELEROMETER
 #ifdef LED_DEBUG
 	if(motion_temp_values.acc_xyz[0] > 0)
 	{
@@ -471,6 +575,7 @@ void application_run( void )
 	{
 		nrf_gpio_pin_write(24, 1);
 	}
+#endif
 #endif
 }
 
