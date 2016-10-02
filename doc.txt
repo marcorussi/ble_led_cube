@@ -1,0 +1,132 @@
+Autore: Marco Russi
+Data: 02/10/2016
+
+
+BLE CUBE
+
+
+1 - BLE
+1.1 - Advertising
+1.1.1 - Advertising packet structure
+
+The device advertises a well defines packet as defined here below:
+
+FIRST_LENGTH_POS: first length
+ADV_TYPE_FLAGS_POS: adv flags type
+BR_EDR_NOT_SUPPORTED_POS: BR/EDR not supported
+SECOND_LENGTH_POS: second length
+MANUF_DATA_TYPE_POS: manufacturer data type
+MANUF_ID_BYTE_0_POS: manufacturer ID lower byte
+MANUF_ID_BYTE_1_POS: manufacturer ID higher byte
+MANUF_DATA_LENGTH_POS: data length
+SERVICE_ID_BYTE_0_POS: service ID lower byte
+SERVICE_ID_BYTE_1_POS: service ID higher byte
+DATA_BYTE_0_POS: data byte 0
+DATA_BYTE_1_POS: data byte 1
+DATA_BYTE_2_POS: data byte 2 
+DATA_BYTE_3_POS: data byte 3 
+DATA_BYTE_4_POS: data byte 4 
+DATA_BYTE_5_POS: data byte 5 
+DATA_BYTE_6_POS: data byte 6 
+DATA_BYTE_7_POS: data byte 7 
+CALIB_RSSI_POS: calibrated RSSI 
+
+with the defined values:
+
+0x02: first length 
+ADV_FLAGS_TYPE: adv flags type 
+BR_EDR_NOT_SUPPORTED: BR/EDR not supported 
+(uint8_t)(MANUF_DATA_LENGTH + 4): second length 
+MANUF_DATA_TYPE: manufacturer data type 
+(uint8_t)MANUFACTURER_ID: manufacturer ID lower byte 
+(uint8_t)(MANUFACTURER_ID >> 8): manufacturer ID higher byte 
+MANUF_DATA_LENGTH: manufacturer data length 
+(uint8_t)MANUF_SERVICE_ID: service ID lower byte 
+(uint8_t)(MANUF_SERVICE_ID >> 8): service ID higher byte 
+INITIAL_FACE_INDEX_VALUE: Data 0 
+0x00: Data 1 
+0x00: Data 2 
+0x15: Data 3 
+0x00: Data 4 
+0x00: Data 5 
+0x00: Data 6 
+0x00: Data 7 
+TX_POWER_MEASURED_RSSI: RSSI TX power
+
+The MANUFACTURER_ID is attributed at each company from Bluetooth SIG and in this case it is flash memory defined.
+The SERVICE_ID is also flash memory defined and it is a custom field indicating a specific service implemented by the device. 
+This field is used by other compatible products to understand the behaviour of the device.
+The following 8 bytes are specific to the service ID and represent the shared data between devices that support that service.
+The CALIB_RSSI field is a calibrated value of RSSI in two's complement. It is not used by a scanner device at the moment (TO BE DEFINED). 
+
+1.1.2 - Advertised service data
+Advertised data from a remote controller are 8 byte long.
+The defined service ID is the only supported and related data bytes are managed as below:
+
+DATA_BYTE_0_POS: cube face which the cube leans on
+DATA_BYTE_1_POS: not used 
+DATA_BYTE_2_POS: any value change means that new light values follow 
+DATA_BYTE_3_POS: new RED value in % (0 - 100) 
+DATA_BYTE_4_POS: new GREEN value in % (0 - 100) 
+DATA_BYTE_5_POS: new BLUE value in % (0 - 100) 
+DATA_BYTE_6_POS: new WHITE value in % (0 - 100) 
+DATA_BYTE_7_POS: not used 
+
+The new light values are update when the cube confirms to be lean on a new face prior movement detection (TO BE IMPLEMENTED SINCE IT UPDATES THE CURRENT POSITION PERIODICALLY AT THE MOMENT).
+
+
+1.2 - Services
+
+There is only one service available which contains the following characteristics:
+- PRESET1
+- PRESET2
+- SPECIAL_OP
+The base UUID of the service is: {{0x8A, 0xAF, 0xA6, 0xC2, 0x3A, 0x32, 0x8F, 0x84, 0x75, 0x4F, 0xF3, 0x02, 0x01, 0x50, 0x65, 0x20}}
+and the three characteristics PRESET1, PRESET2 and SPECIAL_OP have an UUID increment of respectively 0x05, 0x0A and 0x0F. 
+
+1.2.1 - PRESET1 and PRSET2 characteristics
+There characteristics are 15 byte long with read and write access. Each characteristic is divided in 3 groups of 5 values. 
+The first 4 are RGBW PWM values in pecentage from 0 to 100 while the fifth one is not used at the moment. 
+Each group of 5 represent configuration data for the related face index. PRESET1 contains data for face 1, 2 and 3 while PRESET2 for 4, 5 and 6. 
+The lower the group is in the characteristic, the lower is the related index: first 5 values of PRESET1 contained between byte 0 and byte 4 are related to face 1 and so on. 
+These characteristics are stored in persistent memory. Application.c module defines default values:
+
+100: Preset 1 - R			
+0: Preset 1 - G
+0: Preset 1 - B 
+0: Preset 1 - W 
+0xFF: Preset 1 - Unused 
+0: Preset 2 - R 					
+100: Preset 2 - G 	
+0: Preset 2 - B 
+0: Preset 2 - W 
+0xFF: Preset 2 - Unused 
+0: Preset 3 - R 						
+0: Preset 3 - G 
+100: Preset 3 - B 
+0: Preset 3 - W 
+0xFF: Preset 3 - Unused 
+68: Preset 4 - R 						
+100: Preset 4 - G 
+0: Preset 4 - B 
+0: Preset 4 - W 
+0xFF: Preset 4 - Unused 
+0: Preset 5 - R 						
+90: Preset 5 - G 
+100: Preset 5 - B 
+0: Preset 5 - W 
+0xFF: Preset 5 - Unused 
+49: Preset 6 - R 							
+100: Preset 6 - G 
+55: Preset 6 - B 
+0: Preset 6 - W 
+0xFF: Preset 6 - Unused 
+
+1.2.2 - SPECIAL OP characteristic
+This characteristic is 1 byte long and can be written only. Upon write command the new value is sent to application module and managed accordingly. 
+Any special command can be implemented. The only valid command implemented at the moment is:
+
+DFU_UPGRADE_CHAR_PASSWORD: 0xA9
+
+used for entering in bootloader mode to perform a firmware upgrade.
+

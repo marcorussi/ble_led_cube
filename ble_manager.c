@@ -192,7 +192,7 @@ static const uint8_t adv_data_packet[ADV_DATA_PACKET_LENGTH] =
 	MANUF_DATA_TYPE,					/* manufacturer data type */
 	(uint8_t)MANUFACTURER_ID,			/* manufacturer ID lower byte */
 	(uint8_t)(MANUFACTURER_ID >> 8),	/* manufacturer ID higher byte */
-	MANUF_DATA_LENGTH,
+	MANUF_DATA_LENGTH,					/* manufacturer data length */
 	(uint8_t)MANUF_SERVICE_ID,			/* service ID lower byte */
 	(uint8_t)(MANUF_SERVICE_ID >> 8),	/* service ID higher byte */
 	INITIAL_FACE_INDEX_VALUE,			/* Data 0 */
@@ -203,7 +203,7 @@ static const uint8_t adv_data_packet[ADV_DATA_PACKET_LENGTH] =
 	0x00,								/* Data 5 */
 	0x00,								/* Data 6 */
 	0x00,								/* Data 7 */
-	TX_POWER_MEASURED_RSSI
+	TX_POWER_MEASURED_RSSI				/* RSSI TX power */
 };
 
 
