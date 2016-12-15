@@ -1,5 +1,6 @@
 # ble_led_cube
 BLE cube for controlling BLE LED dimmers. Rotating the cube, a compatible BLE LED dimmer changes LED colour accordingly: each face corresponds to a configured RGBW PWM values group that it is advertised once the cube is moved and put on a new face.
+Refer to doc.txt for more details.
 
 
 **Install**
